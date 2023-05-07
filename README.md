@@ -1,5 +1,5 @@
-# Free Overleaf Ldap Implementation
-
+# Free Overleaf Ldap Implementation - 3.3
+ 
 This repo contains an improved, free ldap authentication and authorisation 
 for sharelatex/[overleaf](https://github.com/overleaf/overleaf) community 
 edition. Currently this repo uses sharelatex:latest.
