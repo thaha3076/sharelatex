@@ -1,0 +1,22 @@
+extends ./layout-base
+
+include ./_mixins/formMessages
+
+block entrypointVar
+	- entrypoint = 'marketing'
+
+block body
+	if (typeof(suppressNavbar) == "undefined")
+		include layout/navbar-marketing
+
+	block content
+
+	if (typeof(suppressFooter) == "undefined")
+		if showThinFooter
+			include layout/footer-marketing
+		else
+			include layout/fat-footer
+
+		include _cookie_banner
+
+	!= moduleIncludes("contactModal-marketing", locals)

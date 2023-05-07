@@ -1,0 +1,54 @@
+.list-like-table {
+  border: 1px solid @hr-border;
+  border-radius: @border-radius-base;
+  list-style: none;
+  margin: 0;
+  padding: 0 @padding-sm;
+  li {
+    border-top: 1px solid @hr-border;
+    div {
+      display: table-cell;
+      float: none;
+      vertical-align: middle;
+    }
+    .row {
+      display: table;
+      margin: 0;
+      width: 100%;
+    }
+    &:first-child {
+      border-top: 0;
+    }
+  }
+}
+
+.list-style-check-green {
+  list-style-image: url('../../../public/img/fa-check-green.svg');
+}
+
+.icon-bullet-list {
+  @icon-bullet-list-icon-size: 30px;
+  ul {
+    list-style: none;
+    margin-top: 30px;
+    padding-left: 20px;
+  }
+
+  &.checked {
+    li {
+      background: url('../../../public/img/material-icons/circle-green-24.svg')
+        no-repeat left top;
+      background-size: @icon-bullet-list-icon-size @icon-bullet-list-icon-size;
+      min-height: @icon-bullet-list-icon-size;
+      margin-bottom: 18px;
+      padding-left: 42px;
+      &:first-line {
+        line-height: @icon-bullet-list-icon-size;
+      }
+    }
+  }
+}
+
+.list-item-with-margin-bottom {
+  margin-bottom: @line-height-computed;
+}

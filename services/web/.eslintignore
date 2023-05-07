@@ -1,0 +1,8 @@
+# NOTE: changing paths may require updating them in the Makefile too.
+node_modules
+modules/**/scripts
+frontend/js/vendor
+modules/**/frontend/js/vendor
+/public/
+frontend/js/features/source-editor/lezer-latex/latex.mjs
+frontend/js/features/source-editor/lezer-latex/latex.terms.mjs

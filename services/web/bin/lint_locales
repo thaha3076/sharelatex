@@ -1,0 +1,61 @@
+#!/bin/bash
+
+set -e
+
+# Ensure all locale files are sorted.
+node scripts/translations/sort.js --check
+
+# Ensure all locales are still in use
+node scripts/translations/cleanupUnusedLocales.js --check
+
+# Ensure all locales used in the frontend are tracked
+OUTPUT=data/dumpFolder/i18next-scanner
+trap "rm -rf $OUTPUT" EXIT
+npx i18next-scanner --output "$OUTPUT"
+ACTUAL=frontend/extracted-translations.json
+EXPECTED="$OUTPUT/frontend/extracted-translations.json"
+if ! diff "$ACTUAL" "$EXPECTED"; then
+  cat <<MSG >&2
+
+services/web/frontend/extracted-translations.json is not up-to-date.
+
+---
+Try running:
+
+  internal$ bin/run web npm run extract-translations
+
+---
+MSG
+  exit 1
+fi
+
+# Ensure no locales contain single quotes.
+LOCALES_WITH_SINGLE_QUOTE=$(\
+  grep \
+    --files-with-matches \
+    --recursive locales/ \
+    --regex "'" \
+  || true
+)
+
+for file in ${LOCALES_WITH_SINGLE_QUOTE}; do
+  cat <<MSG >&2
+
+ERROR: $file contains a locale with a single quote.
+
+---
+$(grep "$file" --regex "'")
+---
+
+Using single quotes in locales can lead to Angular XSS.
+
+You will need to replace the quote with a similar looking character.
+’ (\u2019) is a good candidate.
+
+Links:
+ - https://en.wikipedia.org/wiki/Right_single_quotation_mark
+ - https://github.com/overleaf/issues/issues/4478
+
+MSG
+  exit 1
+done

@@ -1,0 +1,36 @@
+{
+  "name": "@overleaf/logger",
+  "homepage": "www.overleaf.com",
+  "description": "A centralised logging system for Overleaf",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/overleaf/overleaf"
+  },
+  "license": "AGPL-3.0-only",
+  "version": "3.1.1",
+  "scripts": {
+    "test": "mocha --grep=$MOCHA_GREP test/**/*.js",
+    "format": "prettier --list-different $PWD/'**/*.js'",
+    "format:fix": "prettier --write $PWD/'**/*.js'",
+    "lint": "eslint --max-warnings 0 --format unix .",
+    "lint:fix": "eslint --fix .",
+    "test:ci": "npm run test"
+  },
+  "dependencies": {
+    "@google-cloud/logging-bunyan": "^3.2.0",
+    "@overleaf/o-error": "*",
+    "@sentry/node": "^6.13.2",
+    "bunyan": "^1.8.14",
+    "node-fetch": "^2.6.7"
+  },
+  "devDependencies": {
+    "chai": "^4.3.6",
+    "mocha": "^10.2.0",
+    "sandboxed-module": "^2.0.4",
+    "sinon": "^9.2.4",
+    "sinon-chai": "^3.7.0"
+  },
+  "peerDependencies": {
+    "@overleaf/metrics": "*"
+  }
+}

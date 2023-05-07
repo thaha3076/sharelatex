@@ -1,0 +1,112 @@
+version: "2.3"
+
+volumes:
+  data:
+
+services:
+
+  test_unit:
+    image: node:16.17.1
+    volumes:
+      - .:/overleaf/services/web
+      - ../../node_modules:/overleaf/node_modules
+      - ../../libraries:/overleaf/libraries
+    working_dir: /overleaf/services/web
+    environment:
+      BASE_CONFIG:
+      SHARELATEX_CONFIG:
+      MOCHA_GREP: ${MOCHA_GREP}
+      NODE_OPTIONS: "--unhandled-rejections=strict"
+    command: npm run --silent test:unit:app
+    user: node
+
+  test_acceptance:
+    image: node:16.17.1
+    volumes:
+      - .:/overleaf/services/web
+      - ../../node_modules:/overleaf/node_modules
+      - ../../libraries:/overleaf/libraries
+    user: node
+    working_dir: /overleaf/services/web
+    env_file: docker-compose.common.env
+    environment:
+      BASE_CONFIG:
+      SHARELATEX_CONFIG:
+      MOCHA_GREP: ${MOCHA_GREP}
+      MONGO_SERVER_SELECTION_TIMEOUT: 600000
+      MONGO_SOCKET_TIMEOUT: 300000
+      # SHARELATEX_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING: 'true'
+
+    extra_hosts:
+      - 'www.overleaf.test:127.0.0.1'
+    depends_on:
+      - redis
+      - mongo
+      - saml
+      - ldap
+    command: npm run --silent test:acceptance:app
+
+  test_karma:
+    build:
+      context: ../..
+      dockerfile: services/web/Dockerfile.frontend
+    volumes:
+      - .:/overleaf/services/web
+      - ../../node_modules:/overleaf/node_modules
+      - ../../libraries:/overleaf/libraries
+    environment:
+      NODE_OPTIONS: "--unhandled-rejections=strict"
+    working_dir: /overleaf/services/web
+    command: npm run --silent test:karma:single
+
+  test_frontend:
+    build:
+      context: ../..
+      dockerfile: services/web/Dockerfile
+      target: base
+    volumes:
+      - .:/overleaf/services/web
+      - ../../node_modules:/overleaf/node_modules
+      - ../../libraries:/overleaf/libraries
+    working_dir: /overleaf/services/web
+    environment:
+      MOCHA_GREP: ${MOCHA_GREP}
+      NODE_OPTIONS: "--unhandled-rejections=strict"
+    command: npm run --silent test:frontend
+    user: node
+
+  test_frontend_ct:
+    image: cypress/included:12.2.0
+    volumes:
+      - ../../:/overleaf
+    working_dir: /overleaf/services/web
+    entrypoint: npm
+    command:
+      - "run"
+      - "cypress:run-ct"
+
+  redis:
+    image: redis
+
+  mongo:
+    image: mongo:4.4.16
+    command: --replSet overleaf
+
+  ldap:
+    restart: always
+    image: rroemhild/test-openldap:1.1
+    # Workaround large memory allocation (using the max-open-files-limit as socket buffer scale).
+    # REF: https://github.com/moby/moby/issues/8231#issuecomment-63877553
+    # REF: https://github.com/moby/moby/issues/8231#issuecomment-63871343
+    command:
+      - 'bash'
+      - '-c'
+      - 'ulimit -n 1024 && exec bash /run.sh'
+
+  saml:
+      restart: always
+      image: gcr.io/overleaf-ops/saml-test
+      environment:
+          SAML_BASE_URL_PATH: 'http://saml/simplesaml/'
+          SAML_TEST_SP_ENTITY_ID: 'sharelatex-test-saml'
+          SAML_TEST_SP_LOCATION: 'http://www.overleaf.test:23000/saml/callback'
