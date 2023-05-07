@@ -1,0 +1,10 @@
+clsi
+--data-dirs=cache,compiles,output
+--dependencies=
+--docker-repos=gcr.io/overleaf-ops
+--env-add=ENABLE_PDF_CACHING="true",PDF_CACHING_ENABLE_WORKER_POOL="true"
+--env-pass-through=TEXLIVE_IMAGE
+--has-custom-cloudbuild=True
+--node-version=16.17.1
+--public-repo=True
+--script-version=4.1.0

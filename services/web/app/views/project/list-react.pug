@@ -1,0 +1,32 @@
+extends ../layout-marketing
+
+block entrypointVar
+	- entrypoint = 'pages/project-list'
+
+block vars
+	- var suppressNavContentLinks = true
+
+block append meta
+	meta(name="ol-usersBestSubscription" data-type="json" content=usersBestSubscription)
+	meta(name="ol-notifications" data-type="json" content=notifications)
+	meta(name="ol-notificationsInstitution" data-type="json" content=notificationsInstitution)
+	meta(name="ol-userEmails" data-type="json" content=userEmails)
+	meta(name="ol-allInReconfirmNotificationPeriods" data-type="json" content=allInReconfirmNotificationPeriods)
+	meta(name="ol-user" data-type="json" content=user)
+	meta(name="ol-userAffiliations" data-type="json" content=userAffiliations)
+	meta(name="ol-reconfirmedViaSAML" content=reconfirmedViaSAML)
+	meta(name="ol-survey" data-type="json" content=survey)
+	meta(name="ol-tags" data-type="json" content=tags)
+	meta(name="ol-portalTemplates" data-type="json" content=portalTemplates)
+	meta(name="ol-prefetchedProjectsBlob" data-type="json" content=prefetchedProjectsBlob)
+	if (suggestedLanguageSubdomainConfig)
+		meta(name="ol-suggestedLanguage" data-type="json" content=Object.assign(suggestedLanguageSubdomainConfig, {
+			lngName: translate(suggestedLanguageSubdomainConfig.lngCode),
+			imgUrl: buildImgPath("flags/24/" + suggestedLanguageSubdomainConfig.lngCode + ".png")
+		}))
+	meta(name="ol-currentUrl" data-type="string" content=currentUrl)
+	meta(name="ol-showGroupsAndEnterpriseBanner" data-type="boolean" content=showGroupsAndEnterpriseBanner)
+	meta(name="ol-groupsAndEnterpriseBannerVariant" data-type="string" content=groupsAndEnterpriseBannerVariant)
+
+block content
+	main.content.content-alt.project-list-react#project-list-root

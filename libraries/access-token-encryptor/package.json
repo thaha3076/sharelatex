@@ -1,0 +1,27 @@
+{
+  "name": "@overleaf/access-token-encryptor",
+  "version": "3.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test/**/*.js",
+    "lint": "eslint --max-warnings 0 --format unix .",
+    "lint:fix": "eslint --fix .",
+    "format": "prettier --list-different $PWD/'**/*.js'",
+    "format:fix": "prettier --write $PWD/'**/*.js'",
+    "test:ci": "npm run test"
+  },
+  "author": "",
+  "license": "AGPL-3.0-only",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  },
+  "peerDependencies": {
+    "mongodb": "*"
+  },
+  "devDependencies": {
+    "chai": "^4.3.6",
+    "mocha": "^10.2.0",
+    "sandboxed-module": "^2.0.4"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "watch": [
+    "app/src/",
+    "app.js",
+    "locales/*.json",
+    "modules/*/app/src/",
+    "config/",
+    "../../libraries/"
+  ]
+}

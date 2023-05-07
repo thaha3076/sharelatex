@@ -1,0 +1,44 @@
+{
+  "name": "@overleaf/document-updater",
+  "description": "An API for applying incoming updates to documents in real-time",
+  "private": true,
+  "main": "app.js",
+  "scripts": {
+    "start": "node $NODE_APP_OPTIONS app.js",
+    "test:acceptance:_run": "mocha --recursive --reporter spec --timeout 15000 --exit $@ test/acceptance/js",
+    "test:acceptance": "npm run test:acceptance:_run -- --grep=$MOCHA_GREP",
+    "test:unit:_run": "mocha --recursive --reporter spec $@ test/unit/js",
+    "test:unit": "npm run test:unit:_run -- --grep=$MOCHA_GREP",
+    "nodemon": "nodemon --config nodemon.json",
+    "lint": "eslint --max-warnings 0 --format unix .",
+    "format": "prettier --list-different $PWD/'**/*.js'",
+    "format:fix": "prettier --write $PWD/'**/*.js'",
+    "lint:fix": "eslint --fix ."
+  },
+  "dependencies": {
+    "@overleaf/logger": "*",
+    "@overleaf/metrics": "*",
+    "@overleaf/o-error": "*",
+    "@overleaf/ranges-tracker": "*",
+    "@overleaf/redis-wrapper": "*",
+    "@overleaf/settings": "*",
+    "async": "^3.2.2",
+    "body-parser": "^1.19.0",
+    "bunyan": "^1.8.15",
+    "diff-match-patch": "overleaf/diff-match-patch#89805f9c671a77a263fc53461acd62aa7498f688",
+    "express": "^4.18.2",
+    "lodash": "^4.17.21",
+    "mongodb": "^4.11.0",
+    "request": "^2.88.2",
+    "requestretry": "^7.1.0"
+  },
+  "devDependencies": {
+    "chai": "^4.3.6",
+    "chai-as-promised": "^7.1.1",
+    "cluster-key-slot": "^1.0.5",
+    "mocha": "^10.2.0",
+    "sandboxed-module": "^2.0.4",
+    "sinon": "^9.2.4",
+    "timekeeper": "^2.0.0"
+  }
+}

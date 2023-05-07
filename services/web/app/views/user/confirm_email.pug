@@ -1,0 +1,41 @@
+extends ../layout-marketing
+
+block content
+	main.content.content-alt#main-content
+		.container
+			.row
+				.col-md-6.col-md-offset-3.col-lg-4.col-lg-offset-4
+					.card
+						.page-header
+							h1 #{translate("confirm_email")}
+						form(
+							data-ol-async-form,
+							data-ol-auto-submit,
+							name="confirmEmailForm"
+							action="/user/emails/confirm",
+							method="POST",
+							id="confirmEmailForm",
+						)
+							input(type="hidden", name="_csrf", value=csrfToken)
+							input(type="hidden", name="token", value=token)
+
+							div(data-ol-not-sent)
+								+formMessages()
+
+								.actions
+									button.btn-primary.btn.btn-block(
+										type='submit',
+										data-ol-disabled-inflight
+									)
+										span(data-ol-inflight="idle")
+											| #{translate('confirm')}
+										span(hidden data-ol-inflight="pending")
+											i.fa.fa-fw.fa-spin.fa-spinner(aria-hidden="true")
+											| &nbsp;#{translate('confirming')}… 
+
+							div(hidden data-ol-sent)
+								.alert.alert-success
+									| #{translate('thank_you_email_confirmed')}
+								div.text-center
+									a.btn.btn-primary(href="/user/settings")
+										| #{translate('go_to_account_settings')}

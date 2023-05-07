@@ -1,0 +1,40 @@
+mixin formMessages()
+	div(
+		data-ol-form-messages='',
+		role="alert"
+	)
+
+mixin customFormMessage(key, kind)
+	if kind === 'success'
+		div.alert.alert-success(
+			hidden,
+			data-ol-custom-form-message=key,
+			role="alert"
+			aria-live="polite"
+		)
+			block
+	else if kind === 'danger'
+		div.alert.alert-danger(
+			hidden,
+			data-ol-custom-form-message=key,
+			role="alert"
+			aria-live="assertive"
+		)
+			block
+	else
+		div.alert.alert-warning(
+			hidden,
+			data-ol-custom-form-message=key,
+			role="alert"
+			aria-live="polite"
+		)
+			block
+
+mixin customValidationMessage(key)
+	div.invalid-feedback.mt-2(
+		hidden,
+		data-ol-custom-form-message=key
+	)
+		i.fa.fa-fw.fa-warning.me-1(aria-hidden="true")
+		div
+			block

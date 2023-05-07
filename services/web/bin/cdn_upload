@@ -1,0 +1,38 @@
+#!/bin/bash
+set -e
+
+function upload_into_bucket() {
+  bucket=$1
+
+  # stylesheets
+  bin/cdn_upload_batch 'text/css' "$bucket" '.css' \
+    -x '.+(?<!\.css)$' &
+
+  # javascript files
+  bin/cdn_upload_batch 'application/javascript' "$bucket" '.js' \
+    -x '.+(?<!\.js)$' &
+
+  # the rest
+  bin/cdn_upload_batch '-' "$bucket" '-' \
+    -x '.+\.(css|js)$' &
+
+  wait
+}
+
+# Upload to staging CDN if branch is either 'master' or 'staging-master' or main variants
+if [[ "$BRANCH_NAME" == "master" || "$BRANCH_NAME" == "staging-master" || "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "staging-main" ]]; then
+  tar --directory=/tmp/ -xf build.tar
+
+  # delete source maps
+  find /tmp/public -name '*.js.map' -delete
+
+  bin/compress_assets
+
+  upload_into_bucket $CDN_STAG
+  # Only upload to production CDN if branch is
+  if [[ "$BRANCH_NAME" == "master" || "$BRANCH_NAME" == "main" ]]; then
+    upload_into_bucket $CDN_PROD
+  fi
+fi
+
+
