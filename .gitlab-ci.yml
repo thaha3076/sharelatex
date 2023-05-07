@@ -1,0 +1,30 @@
+# To contribute improvements to CI/CD templates, please follow the Development guide at:
+# https://docs.gitlab.com/ee/development/cicd/templates.html
+# This specific template is located at:
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Docker.gitlab-ci.yml
+
+# Build a Docker image with CI/CD and push to the GitLab registry.
+# Docker-in-Docker documentation: https://docs.gitlab.com/ee/ci/docker/using_docker_build.html
+#
+# This template uses one generic job with conditional builds
+# for the default branch and all other (MR) branches.
+
+docker-build:
+  # Use the official docker image.
+  cache: [] # disable cache to prevent old layers
+  image: docker:dind
+  variables:
+    HTTPS_PROXY: "http://172.17.0.1:7890"
+    HTTP_PROXY: "http://172.17.0.1:7890"
+  stage: build
+  when: manual
+  services:
+    - docker:dind
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login glcr.cra.ac.cn --username "$CI_REGISTRY_USER" --password-stdin
+  # Default branch leaves tag empty (= latest tag)
+  # All other branches are tagged with the escaped branch name (commit ref slug)
+  script:
+    - |
+      docker build -t "glcr.cra.ac.cn/sustech-cra/overleaf-ldap-oauth2:3.1-20220612" .
+      docker push "glcr.cra.ac.cn/sustech-cra/overleaf-ldap-oauth2:3.1-20220612"

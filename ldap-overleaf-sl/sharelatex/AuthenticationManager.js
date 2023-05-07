@@ -6,19 +6,17 @@ const EmailHelper = require('../Helpers/EmailHelper')
 const {
   InvalidEmailError,
   InvalidPasswordError,
+  ParallelLoginError,
 } = require('./AuthenticationErrors')
 const util = require('util')
-
 const { Client } = require('ldapts');
 const ldapEscape = require('ldap-escape');
-
-// https://www.npmjs.com/package/@overleaf/o-error
-// have a look if we can do nice error messages.
+const HaveIBeenPwned = require('./HaveIBeenPwned')
 
 const BCRYPT_ROUNDS = Settings.security.bcryptRounds || 12
 const BCRYPT_MINOR_VERSION = Settings.security.bcryptMinorVersion || 'a'
 
-const _checkWriteResult = function(result, callback) {
+const _checkWriteResult = function (result, callback) {
   // for MongoDB
   if (result && result.modifiedCount === 1) {
     callback(null, true)
@@ -48,10 +46,55 @@ const AuthenticationManager = {
           return callback(err)
         }
         callback(null, user)
+        HaveIBeenPwned.checkPasswordForReuseInBackground(password)
         }
     )
   },
 
+  //oauth2
+  createUserIfNotExist(oauth_user, callback) {
+    const query = {
+      //name: ZHANG San
+      email: oauth_user.email
+    };
+    User.findOne(query, (error, user) => {
+      if ((!user || !user.hashedPassword)) {
+        //create random pass for local userdb, does not get checked for ldap users during login
+        let pass = require("crypto").randomBytes(32).toString("hex")
+        const userRegHand = require('../User/UserRegistrationHandler.js')
+        userRegHand.registerNewUser({
+              email: query.email,
+              first_name: oauth_user.given_name,
+              last_name: oauth_user.family_name,
+              password: pass
+            },
+            function (error, user) {
+              if (error) {
+                return callback(error, null);
+              }
+              user.admin = false
+              user.emails[0].confirmedAt = Date.now()
+              user.save()
+              console.log("user %s added to local library", query.email)
+              User.findOne(query, (error, user) => {
+                    if (error) {
+                      return callback(error, null);
+                    }
+                    if (user && user.hashedPassword) {
+                      return callback(null, user);
+                    } else {
+                      return callback("Unknown error", null);
+                    }
+                  }
+              )
+            })
+      } else {
+        return callback(null, user);
+      }
+    });
+  },
+
+  //LDAP
   createIfNotExistAndLogin(query, user, callback, uid, firstname, lastname, mail, isAdmin) {
     if (!user) {
       //console.log("Creating User:" + JSON.stringify(query))
@@ -61,29 +104,29 @@ const AuthenticationManager = {
 
       const userRegHand = require('../User/UserRegistrationHandler.js')
       userRegHand.registerNewUser({
-        email: mail,
-        first_name: firstname,
-        last_name: lastname,
-        password: pass
-      },
-      function (error, user) {
-        if (error) {
-          console.log(error)
-        }
-        user.email = mail
-        user.isAdmin = isAdmin
-        user.emails[0].confirmedAt = Date.now()
-        user.save()
-        //console.log("user %s added to local library: ", mail)
-        User.findOne(query, (error, user) => {
-          if (error) {
-            console.log(error)
-          }
-          if (user && user.hashedPassword) {
-            AuthenticationManager.login(user, "randomPass", callback)
-          }
-        })
-      }) // end register user
+            email: mail,
+            first_name: firstname,
+            last_name: lastname,
+            password: pass
+          },
+          function (error, user) {
+            if (error) {
+              console.log(error)
+            }
+            user.email = mail
+            user.isAdmin = isAdmin
+            user.emails[0].confirmedAt = Date.now()
+            user.save()
+            //console.log("user %s added to local library: ", mail)
+            User.findOne(query, (error, user) => {
+              if (error) {
+                console.log(error)
+              }
+              if (user && user.hashedPassword) {
+                AuthenticationManager.login(user, "randomPass", callback)
+              }
+            })
+          }) // end register user
     } else {
       AuthenticationManager.login(user, "randomPass", callback)
     }
@@ -91,18 +134,18 @@ const AuthenticationManager = {
 
   authUserObj(error, user, query, password, callback) {
     if ( process.env.ALLOW_EMAIL_LOGIN && user && user.hashedPassword) {
-        console.log("email login for existing user " + query.email)
-        // check passwd against local db
-        bcrypt.compare(password, user.hashedPassword, function (error, match) {
-          if (match) {
-            console.log("Local user password match")
-            AuthenticationManager.login(user, password, callback)
-          } else {
-            console.log("Local user password mismatch, trying LDAP")
-            // check passwd against ldap
-            AuthenticationManager.ldapAuth(query, password, AuthenticationManager.createIfNotExistAndLogin, callback, user)
-          }
-        })
+      console.log("email login for existing user " + query.email)
+      // check passwd against local db
+      bcrypt.compare(password, user.hashedPassword, function (error, match) {
+        if (match) {
+          console.log("Local user password match")
+          AuthenticationManager.login(user, password, callback)
+        } else {
+          console.log("Local user password mismatch, trying LDAP")
+          // check passwd against ldap
+          AuthenticationManager.ldapAuth(query, password, AuthenticationManager.createIfNotExistAndLogin, callback, user)
+        }
+      })
     } else {
       // No local passwd check user has to be in ldap and use ldap credentials
       AuthenticationManager.ldapAuth(query, password, AuthenticationManager.createIfNotExistAndLogin, callback, user)
@@ -168,9 +211,21 @@ const AuthenticationManager = {
         message: 'password contains an invalid character',
         info: { code: 'invalid_character' },
       })
+    }
+    if (typeof email === 'string' && email !== '') {
+      const startOfEmail = email.split('@')[0]
+      if (
+        password.indexOf(email) !== -1 ||
+        password.indexOf(startOfEmail) !== -1
+      ) {
+        return new InvalidPasswordError({
+          message: 'password contains part of email address',
+          info: { code: 'contains_email' },
+        })
       }
-      return null
-    },
+    }
+    return null
+  },
 
   setUserPassword(user, password, callback) {
     AuthenticationManager.setUserPasswordInV2(user, password, callback)
@@ -178,7 +233,6 @@ const AuthenticationManager = {
 
   checkRounds(user, hashedPassword, password, callback) {
     // Temporarily disable this function, TODO: re-enable this
-    //return callback()
     if (Settings.security.disableBcryptRoundsUpgrades) {
       return callback()
     }
@@ -201,11 +255,9 @@ const AuthenticationManager = {
   },
 
   setUserPasswordInV2(user, password, callback) {
-    //if (!user || !user.email || !user._id) {
-    //  return callback(new Error('invalid user object'))
-    //}
-
-    console.log("Setting pass for user: " + JSON.stringify(user))
+    if (!user || !user.email || !user._id) {
+      return callback(new Error('invalid user object'))
+    }
     const validationError = this.validatePassword(password, user.email)
     if (validationError) {
       return callback(validationError)
@@ -231,6 +283,7 @@ const AuthenticationManager = {
             return callback(updateError)
           }
           _checkWriteResult(result, callback)
+          HaveIBeenPwned.checkPasswordForReuseInBackground(password)
         }
       )
     })
@@ -264,6 +317,7 @@ const AuthenticationManager = {
     }
     return true
   },
+
 
   async ldapAuth(query, password, onSuccessCreateUserIfNotExistent, callback, user) {
     const client = new Client({
@@ -378,6 +432,9 @@ const AuthenticationManager = {
       }
     })
   }
+
+
+
 }
 
 AuthenticationManager.promises = {
