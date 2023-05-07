@@ -1,0 +1,78 @@
+version: '3.7'
+
+services:
+    web:
+        restart: always
+        #image: sharelatex/sharelatex
+        build: . 
+        container_name: overleaf_sharelatex
+        depends_on:
+            mongo:
+                condition: service_started
+            redis:
+                condition: service_started
+        links:
+            - mongo
+            - redis
+        volumes:
+            - ./sharelatex_data:/var/lib/sharelatex
+            - ./sharelatex_packages:/usr/local/texlive
+        environment:
+            # CHAT_HOST: chat
+            # CLSI_HOST: clsi
+            # CONTACTS_HOST: contacts
+            # DOCSTORE_HOST: docstore
+            # DOCUMENT_UPDATER_HOST: document-updater
+            # FILESTORE_HOST: filestore
+            # GRACEFUL_SHUTDOWN_DELAY: 0
+            # HISTORY_V1_HOST: history-v1
+            # LISTEN_ADDRESS: 0.0.0.0
+            #MONGO_HOST: localhost
+            # NOTIFICATIONS_HOST: notifications
+            # PROJECT_HISTORY_HOST: project-history
+            # REALTIME_HOST: real-time
+            REDIS_HOST: redis
+            # SPELLING_HOST: spelling
+            # TRACK_CHANGES_HOST: track-changes
+            # WEBPACK_HOST: webpack
+            # WEB_API_PASSWORD: sharelatex
+            # WEB_API_USER: sharelatex
+            # WEB_HOST: web
+            LDAP_BIND_USER: Ashraf
+            LDAP_BIND_PW: Ashraf
+            SHARELATEX_APP_NAME: Ashraf # change to custom name
+            SHARELATEX_MONGO_URL: mongodb://mongo/sharelatex
+
+            SHARELATEX_REDIS_HOST: redis
+
+            ENABLED_LINKED_FILE_TYPES: 'url,project_file'
+
+            # Enables Thumbnail generation using ImageMagick
+            ENABLE_CONVERSIONS: 'true'
+            # Disables email confirmation requirement
+            EMAIL_CONFIRMATION_DISABLED: 'true'
+
+            SHARELATEX_ALLOW_ANONYMOUS_READ_AND_WRITE_SHARING: 'true'
+            SHARELATEX_ALLOW_PUBLIC_ACCESS: 'true'
+
+            ## This settings will work only with patched overleaf or pro version maybe?
+            #ALLOW_EMAIL_LOGIN: 'true'
+            OAUTH_CLIENT_ID: someidstring
+            OAUTH_CLIENT_SECRET: someotherstring
+            OAUTH_AUTH_URL: https://test.com/application/o/authorize/
+            OAUTH_ACCESS_URL: https://test.com/application/o/token/
+            OAUTH_USER_URL: https://test.com/application/o/userinfo/
+
+    mongo:
+        restart: always
+        image: mongo
+        container_name: overleaf_mongo
+        volumes:
+            - ./mongo_data:/data/db
+
+    redis:
+        restart: always
+        image: redis:5
+        container_name: overleaf_redis
+        volumes:
+            - ./redis_data:/data
