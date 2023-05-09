@@ -266,7 +266,7 @@ const AuthenticationController = {
     if (req.ip !== user.lastLoginIp) {
       NotificationsBuilder.ipMatcherAffiliation(user._id).create(
         req.ip,
-        () => {}
+        () => { }
       )
     }
     return UserUpdater.updateUser(
@@ -274,14 +274,14 @@ const AuthenticationController = {
       {
         $set: { lastLoginIp: req.ip },
       },
-      () => {}
+      () => { }
     )
   },
 
   requireLogin() {
     const doRequest = function (req, res, next) {
       if (next == null) {
-        next = function () {}
+        next = function () { }
       }
       if (!SessionManager.isUserLoggedIn(req.session)) {
         if (acceptsJson(req)) return send401WithChallenge(res)
@@ -295,25 +295,25 @@ const AuthenticationController = {
     return doRequest
   },
 
-    oauth2Redirect(req, res, next) {
-        res.redirect(`${process.env.OAUTH_AUTH_URL}?` +
-            querystring.stringify({
-                client_id: process.env.OAUTH_CLIENT_ID,
-                response_type: "code",
-                redirect_uri: (process.env.SHARELATEX_SITE_URL + "/oauth/callback"),
-            }));
-    },
+  oauth2Redirect(req, res, next) {
+    res.redirect(`${process.env.OAUTH_AUTH_URL}?` +
+      querystring.stringify({
+        client_id: process.env.OAUTH_CLIENT_ID,
+        response_type: "code",
+        redirect_uri: (process.env.SHARELATEX_SITE_URL + "/oauth/callback"),
+      }));
+  },
 
-    oauth2Callback(req, res, next) {
-        const code = req.query.code;
+  oauth2Callback(req, res, next) {
+      const code = req.query.code;
 
-//construct axios body
-        const params = new URLSearchParams()
-        params.append('grant_type', "authorization_code")
-        params.append('client_id', process.env.OAUTH_CLIENT_ID)
-        params.append('client_secret', process.env.OAUTH_CLIENT_SECRET)
-        params.append("code", code)
-        params.append('redirect_uri', (process.env.SHARELATEX_SITE_URL + "/oauth/callback"))
+      //construct axios body
+      const params = new URLSearchParams()
+      params.append('grant_type', "authorization_code")
+      params.append('client_id', process.env.OAUTH_CLIENT_ID)
+      params.append('client_secret', process.env.OAUTH_CLIENT_SECRET)
+      params.append("code", code)
+      params.append('redirect_uri', (process.env.SHARELATEX_SITE_URL + "/oauth/callback"))
 
 
         // json_body = {
@@ -324,42 +324,42 @@ const AuthenticationController = {
         //     redirect_uri: (process.env.SHARELATEX_SITE_URL + "/oauth/callback"),
         // }
 
-        axios.post(process.env.OAUTH_ACCESS_URL, params, {
-            headers: {
+      axios.post(process.env.OAUTH_ACCESS_URL, params, {
+        headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
 
-            }
+        }
         }).then(access_res => {
 
             // console.log("respond is  " + JSON.stringify(access_res.data))
             // console.log("authorization_bearer_is " + authorization_bearer)
-            authorization_bearer = "Bearer " + access_res.data.access_token
+          authorization_bearer = "Bearer " + access_res.data.access_token
 
-            let axios_get_config = {
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
+          let axios_get_config = {
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
                     "Authorization": authorization_bearer,
-                },
-                params: access_res.data
-            }
+            },
+            params: access_res.data
+          }
 
-            axios.get(process.env.OAUTH_USER_URL, axios_get_config).then(info_res => {
+          axios.get(process.env.OAUTH_USER_URL, axios_get_config).then(info_res => {
                 // console.log("oauth_user: ", JSON.stringify(info_res.data));
-                if (info_res.data.err) {
-                    res.json({message: info_res.data.err});
+            if (info_res.data.err) {
+              res.json({ message: info_res.data.err });
+            } else {
+              AuthenticationManager.createUserIfNotExist(info_res.data, (error, user) => {
+                if (error) {
+                  res.json({ message: error });
                 } else {
-                    AuthenticationManager.createUserIfNotExist(info_res.data, (error, user) => {
-                        if (error) {
-                            res.json({message: error});
-                        } else {
                             // console.log("real_user: ", user);
-                            AuthenticationController.finishLogin(user, req, res, next);
-                        }
-                    });
+                  AuthenticationController.finishLogin(user, req, res, next);
                 }
+              });
+            }
             });
         });
-    },
+  },
 
 
   requireOauth() {
@@ -367,7 +367,7 @@ const AuthenticationController = {
     const Oauth2Server = require('../../../../modules/oauth2-server/app/src/Oauth2Server')
     return function (req, res, next) {
       if (next == null) {
-        next = function () {}
+        next = function () { }
       }
       const request = new Oauth2Server.Request(req)
       const response = new Oauth2Server.Response(res)
@@ -577,7 +577,7 @@ const AuthenticationController = {
 
   _recordSuccessfulLogin(userId, callback) {
     if (callback == null) {
-      callback = function () {}
+      callback = function () { }
     }
     UserUpdater.updateUser(
       userId.toString(),
@@ -618,7 +618,7 @@ const AuthenticationController = {
 
 function _afterLoginSessionSetup(req, user, callback) {
   if (callback == null) {
-    callback = function () {}
+    callback = function () { }
   }
   req.login(user, function (err) {
     if (err) {
@@ -653,7 +653,7 @@ function _afterLoginSessionSetup(req, user, callback) {
           })
           return callback(err)
         }
-        UserSessionsManager.trackSession(user, req.sessionID, function () {})
+        UserSessionsManager.trackSession(user, req.sessionID, function () { })
         if (!req.deviceHistory) {
           // Captcha disabled or SSO-based login.
           return callback()
@@ -676,8 +676,8 @@ function _loginAsyncHandlers(req, user, anonymousAnalyticsId, isNewUser) {
       logger.warn({ err }, 'error setting up login data')
     }
   })
-  LoginRateLimiter.recordSuccessfulLogin(user.email, () => {})
-  AuthenticationController._recordSuccessfulLogin(user._id, () => {})
+  LoginRateLimiter.recordSuccessfulLogin(user.email, () => { })
+  AuthenticationController._recordSuccessfulLogin(user._id, () => { })
   AuthenticationController.ipMatchCheck(req, user)
   Analytics.recordEventForUser(user._id, 'user-logged-in', {
     source: req.session.saml

@@ -1,7 +1,14 @@
 version: '3.7'
 
+networks:
+  net1:
+    driver: bridge
+
+
 services:
     web:
+        networks:
+            - net1
         restart: always
         #image: sharelatex/sharelatex
         build: . 
@@ -11,40 +18,22 @@ services:
                 condition: service_started
             redis:
                 condition: service_started
+            keycloak:
+                condition: service_started
+            ldap:
+                condition: service_started
         links:
             - mongo
             - redis
         volumes:
             - ./sharelatex_data:/var/lib/sharelatex
             - ./sharelatex_packages:/usr/local/texlive
+            - ./hostlog:/var/log/myapp
         environment:
-            # CHAT_HOST: chat
-            # CLSI_HOST: clsi
-            # CONTACTS_HOST: contacts
-            # DOCSTORE_HOST: docstore
-            # DOCUMENT_UPDATER_HOST: document-updater
-            # FILESTORE_HOST: filestore
-            # GRACEFUL_SHUTDOWN_DELAY: 0
-            # HISTORY_V1_HOST: history-v1
-            # LISTEN_ADDRESS: 0.0.0.0
-            #MONGO_HOST: localhost
-            # NOTIFICATIONS_HOST: notifications
-            # PROJECT_HISTORY_HOST: project-history
-            # REALTIME_HOST: real-time
             REDIS_HOST: redis
-            # SPELLING_HOST: spelling
-            # TRACK_CHANGES_HOST: track-changes
-            # WEBPACK_HOST: webpack
-            # WEB_API_PASSWORD: sharelatex
-            # WEB_API_USER: sharelatex
-            # WEB_HOST: web
-            LDAP_BIND_USER: Ashraf
-            LDAP_BIND_PW: Ashraf
-            SHARELATEX_APP_NAME: Ashraf # change to custom name
+            SHARELATEX_APP_NAME: latex # change to custom name
             SHARELATEX_MONGO_URL: mongodb://mongo/sharelatex
-
             SHARELATEX_REDIS_HOST: redis
-
             ENABLED_LINKED_FILE_TYPES: 'url,project_file'
 
             # Enables Thumbnail generation using ImageMagick
@@ -56,12 +45,24 @@ services:
             SHARELATEX_ALLOW_PUBLIC_ACCESS: 'true'
 
             ## This settings will work only with patched overleaf or pro version maybe?
-            #ALLOW_EMAIL_LOGIN: 'true'
-            OAUTH_CLIENT_ID: someidstring
-            OAUTH_CLIENT_SECRET: someotherstring
-            OAUTH_AUTH_URL: https://test.com/application/o/authorize/
-            OAUTH_ACCESS_URL: https://test.com/application/o/token/
-            OAUTH_USER_URL: https://test.com/application/o/userinfo/
+            # ALLOW_EMAIL_LOGIN: 'true'
+
+            LDAP_SERVER: ldap://192.168.108.154:389
+            LDAP_BASE: dc=mydomain,dc=local
+            LDAP_BIND_USER: cn=admin,dc=mydomain,dc=local
+            LDAP_BIND_PW: admin
+            SHARELATEX_SITE_URL: http://localhost:8000
+            OAUTH_CLIENT_ID: oauth-ldap
+            OAUTH_CLIENT_SECRET: chCpkF1rDPc16F7iqgxRZvpEsq2NdXfz
+            OAUTH_AUTH_URL: http://localhost:8080/auth/realms/sharelatex/protocol/openid-connect/auth
+            OAUTH_ACCESS_URL: http://keycloak:8080/auth/realms/sharelatex/protocol/openid-connect/token
+            OAUTH_USER_URL: http://keycloak:8080/auth/realms/sharelatex/protocol/openid-connect/userinfo
+            LDAP_CONTACTS: 'true'
+            LDAP_CONTACT_FILTER: (objectClass=inetOrgPerson)
+            LDAP_USER_FILTER: (mail =%m )
+
+        ports:
+            - "8000:80"
 
     mongo:
         restart: always
@@ -69,6 +70,10 @@ services:
         container_name: overleaf_mongo
         volumes:
             - ./mongo_data:/data/db
+        ports:
+            - 27017:27017
+        networks:
+            - net1
 
     redis:
         restart: always
@@ -76,3 +81,32 @@ services:
         container_name: overleaf_redis
         volumes:
             - ./redis_data:/data
+        networks:
+            - net1
+
+    keycloak:
+        image: jboss/keycloak
+        container_name: overleaf_keycloak
+        ports:
+        - "8080:8080"
+        environment:
+        - KEYCLOAK_USER=admin
+        - KEYCLOAK_PASSWORD=admin
+        networks:
+            - net1
+
+    ldap:
+        image: osixia/openldap:1.5.0
+        container_name: overleaf_ldap
+        environment:
+        - LDAP_ADMIN_PASSWORD=admin
+        - LDAP_DOMAIN=mydomain.local
+        - LDAP_BASE_DN=dc=mydomain,dc=local
+        - LDAP_TLS_VERIFY_CLIENT=never
+        volumes:
+        - ./ldap/ldap-data:/var/lib/ldap
+        - ./ldap/ldap-config:/etc/ldap/slapd.d
+        ports:
+        - "389:389"
+        networks:
+        - net1

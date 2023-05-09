@@ -47,10 +47,12 @@
 *.out
 *.orig
 *.bak
-*.log
+
 .DS_Store
 .DS_Store?
 ._*
 .Trashes
-
-
+/ldap
+/hostlog
+/mongo_data
+/redis_data

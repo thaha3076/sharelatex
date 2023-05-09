@@ -44,9 +44,13 @@ RUN npm install axios ldapts-search ldapts@3.2.4 ldap-escape
 RUN apt-get update && apt-get -y install python3-pygments nano fonts-noto-cjk fonts-noto-cjk-extra fonts-noto-color-emoji xfonts-wqy fonts-font-awesome
 
 # overwrite some files (enable ldap and oauth)
-RUN cp /src/ldap-overleaf-sl/sharelatex/AuthenticationManager.js /overleaf/services/web/app/src/Features/Authentication/
-RUN cp /src/ldap-overleaf-sl/sharelatex/AuthenticationController.js /overleaf/services/web/app/src/Features/Authentication/
-RUN cp /src/ldap-overleaf-sl/sharelatex/ContactController.js /overleaf/services/web/app/src/Features/Contacts/
+COPY /ldap-overleaf-sl/sharelatex/AuthenticationManager.js /overleaf/services/web/app/src/Features/Authentication/
+COPY /ldap-overleaf-sl/sharelatex/AuthenticationController.js /overleaf/services/web/app/src/Features/Authentication/
+COPY /ldap-overleaf-sl/sharelatex/ContactController.js /overleaf/services/web/app/src/Features/Contacts/
+
+# RUN cp /src/ldap-overleaf-sl/sharelatex/AuthenticationManager.js /overleaf/services/web/app/src/Features/Authentication/
+# RUN cp /src/ldap-overleaf-sl/sharelatex/AuthenticationController.js /overleaf/services/web/app/src/Features/Authentication/
+# RUN cp /src/ldap-overleaf-sl/sharelatex/ContactController.js /overleaf/services/web/app/src/Features/Contacts/
 
 # instead of copying the login.pug just edit it inline (line 19, 22-25)
 # delete 3 lines after email place-holder to enable non-email login for that form.
@@ -67,6 +71,9 @@ RUN sed -iE "s%-synctex=1\",%-synctex=1\", \"-shell-escape\",%g" /overleaf/servi
 RUN sed -iE "s%'-synctex=1',%'-synctex=1', '-shell-escape',%g" /overleaf/services/clsi/app/js/LatexRunner.js
 
 # Too much changes to do inline (>10 Lines).
+COPY /ldap-overleaf-sl/sharelatex/settings.pug /overleaf/services/web/app/views/user/
+COPY /ldap-overleaf-sl/sharelatex/navbar.pug /overleaf/services/web/app/views/layout/
+
 RUN cp /src/ldap-overleaf-sl/sharelatex/settings.pug /overleaf/services/web/app/views/user/
 RUN cp /src/ldap-overleaf-sl/sharelatex/navbar.pug /overleaf/services/web/app/views/layout/
 
