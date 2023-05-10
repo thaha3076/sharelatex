@@ -1,6 +1,7 @@
 ARG BASE=sharelatex/sharelatex:3.1
 ARG TEXLIVE_IMAGE=registry.gitlab.com/islandoftex/images/texlive:latest
 
+
 FROM $TEXLIVE_IMAGE as texlive
 
 # FROM nixpkgs/curl as src
@@ -15,6 +16,7 @@ FROM $BASE as app
 # ARG collab_text
 # ARG login_text
 ARG admin_is_sysadmin
+ENV sl_path_local ldap-overleaf-sl3.1
 
 # set workdir (might solve issue #2 - see https://stackoverflow.com/questions/57534295/)
 WORKDIR /overleaf
@@ -44,9 +46,9 @@ RUN npm install axios ldapts-search ldapts@3.2.4 ldap-escape
 RUN apt-get update && apt-get -y install python3-pygments nano fonts-noto-cjk fonts-noto-cjk-extra fonts-noto-color-emoji xfonts-wqy fonts-font-awesome
 
 # overwrite some files (enable ldap and oauth)
-COPY /ldap-overleaf-sl/sharelatex/AuthenticationManager.js /overleaf/services/web/app/src/Features/Authentication/
-COPY /ldap-overleaf-sl/sharelatex/AuthenticationController.js /overleaf/services/web/app/src/Features/Authentication/
-COPY /ldap-overleaf-sl/sharelatex/ContactController.js /overleaf/services/web/app/src/Features/Contacts/
+COPY /$sl_path_local/sharelatex/AuthenticationManager.js /overleaf/services/web/app/src/Features/Authentication/
+COPY /$sl_path_local/sharelatex/AuthenticationController.js /overleaf/services/web/app/src/Features/Authentication/
+COPY /$sl_path_local/sharelatex/ContactController.js /overleaf/services/web/app/src/Features/Contacts/
 
 # RUN cp /src/ldap-overleaf-sl/sharelatex/AuthenticationManager.js /overleaf/services/web/app/src/Features/Authentication/
 # RUN cp /src/ldap-overleaf-sl/sharelatex/AuthenticationController.js /overleaf/services/web/app/src/Features/Authentication/
@@ -71,11 +73,11 @@ RUN sed -iE "s%-synctex=1\",%-synctex=1\", \"-shell-escape\",%g" /overleaf/servi
 RUN sed -iE "s%'-synctex=1',%'-synctex=1', '-shell-escape',%g" /overleaf/services/clsi/app/js/LatexRunner.js
 
 # Too much changes to do inline (>10 Lines).
-COPY /ldap-overleaf-sl/sharelatex/settings.pug /overleaf/services/web/app/views/user/
-COPY /ldap-overleaf-sl/sharelatex/navbar.pug /overleaf/services/web/app/views/layout/
+COPY /$sl_path_local/sharelatex/settings.pug /overleaf/services/web/app/views/user/
+COPY /$sl_path_local/sharelatex/navbar.pug /overleaf/services/web/app/views/layout/d
 
-RUN cp /src/ldap-overleaf-sl/sharelatex/settings.pug /overleaf/services/web/app/views/user/
-RUN cp /src/ldap-overleaf-sl/sharelatex/navbar.pug /overleaf/services/web/app/views/layout/
+# RUN cp /src/ldap-overleaf-sl/sharelatex/settings.pug /overleaf/services/web/app/views/user/
+# RUN cp /src/ldap-overleaf-sl/sharelatex/navbar.pug /overleaf/services/web/app/views/layout/
 
 # new login menu
 RUN cp /src/ldap-overleaf-sl/sharelatex/login.pug /overleaf/services/web/app/views/user/
@@ -94,7 +96,7 @@ RUN rm /overleaf/services/web/app/views/project/editor/review-panel.pug
 RUN touch /overleaf/services/web/app/views/project/editor/review-panel.pug
 
 # Update TeXLive
-COPY --from=texlive /usr/local/texlive /usr/local/texlive
-RUN tlmgr path add
+# COPY --from=texlive /usr/local/texlive /usr/local/texlive
+# RUN tlmgr path add
 # Evil hack for hardcoded texlive 2021 path
 # RUN rm -r /usr/local/texlive/2021 && ln -s /usr/local/texlive/2022 /usr/local/texlive/2021
